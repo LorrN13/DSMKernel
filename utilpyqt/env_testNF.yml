@@ -1,0 +1,16 @@
+# run: conda env create --file env.yml
+
+name: geodpy
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - folium
+  - conda-forge::pyqt
+  - conda-forge::obspy
+  - conda-forge::pyqtwebengine
+  - pytz
+ 
