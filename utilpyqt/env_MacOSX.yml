@@ -1,0 +1,19 @@
+# tested on 10/02/2023 on Apple M1 Max Ventura 13.0.1
+#
+# run: conda env create --file env.yml
+
+name: geodpy
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11.0
+  - ipython=8.9.0
+  - folium=0.14.0
+  - conda-forge::pyqt=5.15.7
+  - conda-forge::obspy=1.4.0
+  - conda-forge::pyqtwebengine=5.15.7
+  - pytz=2022.7.1
+ 

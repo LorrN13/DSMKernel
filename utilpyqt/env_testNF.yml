@@ -8,6 +8,7 @@ channels:
 
 dependencies:
   - python=3.11
+  - ipython
   - folium
   - conda-forge::pyqt
   - conda-forge::obspy
