@@ -13,5 +13,6 @@ dependencies:
   - conda-forge::pyqt
   - conda-forge::obspy
   - conda-forge::pyqtwebengine
+  - conda-forge::streamlit
   - pytz
  
