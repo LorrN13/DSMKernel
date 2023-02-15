@@ -15,4 +15,5 @@ dependencies:
   - conda-forge::pyqtwebengine
   - conda-forge::streamlit
   - pytz
- 
+  - pip:
+    - pyqtlet 
