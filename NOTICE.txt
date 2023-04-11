@@ -1,6 +1,0 @@
-Petite notice avant utilisation.
-
-Besoin de créer un environnement conda afin de retrouver tous les packages avec la correcte version.
-Attention avec numpy, les versions les plus récentes ne fonctionnent pas toutes ! 
-
-$ conda env create --file/env.yml
