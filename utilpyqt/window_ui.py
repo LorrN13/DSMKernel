@@ -1609,27 +1609,40 @@ class Ui_MainWindow(object):
                 elif selected_format == "sac":
                     trace.write(filepath, format='SAC')
             '''
+            self.network_dict={}
+            
             for trace in self.st:
                 network = trace.stats.network
                 station = trace.stats.station
-                start_time = trace.stats.starttime.strftime('%Y%m%dT%H%M%S')
-                end_time = trace.stats.endtime.strftime('%Y%m%dT%H%M%S')
+                self.start_time = trace.stats.starttime.strftime('%Y%m%dT%H%M%S')
+                self.end_time = trace.stats.endtime.strftime('%Y%m%dT%H%M%S')
+                
                 for component in trace.stats.channel.split(','):
                     component = component.strip()  # Remove leading/trailing whitespaces if any
-                    filename = f"{network}.{station}.{component}_{start_time}_{end_time}.{selected_format}"
+                    filename = f"{network}.{station}.{component}_{self.start_time}_{self.end_time}.{selected_format}"
                     filepath = os.path.join(self.seismic_data_directory, filename)
-    
+                    
+                    # Add the file name to the dictionary
+                    if network not in self.network_dict:
+                        self.network_dict[network] = set()
+                    
+                    self.network_dict[network].add(station)
+
+                    
+
+
                     if selected_format == "mseed":
                         trace.write(filepath, format='MSEED')
                     elif selected_format == "sac":
                         trace.write(filepath, format='SAC')
+        print(self.network_dict)
         QtWidgets.QMessageBox.information(None, "Download completed", "Seismic data successfully downloaded.")
         
         self.rotate()
         
         
     def rotate(self):     
-        
+        '''
         network_dict = {}
         
         for station_info in self.stations_communes:
@@ -1640,13 +1653,16 @@ class Ui_MainWindow(object):
                 network_dict[network].add(station)
             else:
                 network_dict[network] = {station}
+        '''
+        os.makedirs("rotate")
         
-        
-        for net, stations in network_dict.items():
+        for net, stations in self.network_dict.items():
             for sta in stations:
-                file_z = f"./{self.seismic_data_directory}/{net}.{sta}_BHZ*.mseed"
-                file_n = f"./{self.seismic_data_directory}/{net}.{sta}_BHN*.mseed"
-                file_e = f"./{self.seismic_data_directory}/{net}.{sta}_BHE*.mseed"
+                file_z = f"{self.seismic_data_directory}/{net}.{sta}.BHZ_{self.start_time}_{self.end_time}.mseed"
+                file_n = f"{self.seismic_data_directory}/{net}.{sta}.BHN_{self.start_time}_{self.end_time}.mseed"
+                file_e = f"{self.seismic_data_directory}/{net}.{sta}.BHE_{self.start_time}_{self.end_time}.mseed"
+                
+                print("file_z :", file_z)
                 
                 if not any([os.path.exists(f) for f in [file_z,file_n,file_e]]):
                     print(f"No files found for network {net} and station {sta}")
@@ -1688,14 +1704,16 @@ class Ui_MainWindow(object):
                 # start rotation
                 st_rot = st.rotate(method='NE->RT', back_azimuth = back_azimuth)
                 
+                
                 st_z = st_rot.select(component='Z')
                 st_r = st_rot.select(component='R')
                 st_t = st_rot.select(component='T')
                 
-                os.makedirs('rotate')
-                st_z.write(f"./rotate/{net}.{sta}_BHZ.mseed")
-                st_r.write(f"./rotate/{net}.{sta}_BHR.mseed")
-                st_t.write(f"./rotate/{net}.{sta}_BHT.mseed")
+        
+                st_z.write(f"rotate/{net}.{sta}_BHZ.mseed")
+                st_r.write(f"rotate/{net}.{sta}_BHR.mseed")
+                st_t.write(f"rotate/{net}.{sta}_BHT.mseed")
+                
         
     def loading_window(self):
         self.load_win = QtWidgets.QDialog()
