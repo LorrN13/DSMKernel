@@ -891,7 +891,7 @@ class Ui_MainWindow(object):
     def get_station(self):
         # CLIENT
         try :
-            client = Client("IRIS")
+            client = Client("RESIF")
         except obspy.clients.fdsn.header.FDSNNoServiceException as e:
             QtWidgets.QMessageBox.warning("Error", "Internet connection is required")
         # DATE TIME CONVERSION
@@ -908,7 +908,7 @@ class Ui_MainWindow(object):
         #network = "*"
         print("Inventory in process...")
         # INVENTORY
-        self.inventory = client.get_stations(network="IU", level='channel', channel = self.channel_choice.currentText())
+        self.inventory = client.get_stations(network="G", level='channel', channel = self.channel_choice.currentText())
         #bucket = storage_client.bucket()
      
         self.stations = []
@@ -1178,7 +1178,7 @@ class Ui_MainWindow(object):
                     filename = '{}_{}.xml'.format(net.code, sta.code)
                     file_path = os.path.join(parent_directory, filename)
         
-                    station_inventory = read_inventory(network=net.code, station=sta.code, starttime=self.starttime, endtime=self.endtime, client="IRIS")
+                    station_inventory = read_inventory(network=net.code, station=sta.code, starttime=self.starttime, endtime=self.endtime, client="RESIF")
                     station_inventory.write(file_path, format="stationxml")
                     
             QtWidgets.QMessageBox.information(None, "Download completed", "Stations data successfully downloaded.")
@@ -1284,7 +1284,7 @@ class Ui_MainWindow(object):
         
         # DEBUT DE LA FENETRE SUR LES STATONS
         self.sta_dialog.close()
-        client = Client("IRIS")
+        client = Client("RESIF")
         # CONVERT MAGNITUDE
         valueMagMin = self.mag_min.value()
         valueMagMax = self.mag_max.value()
@@ -1365,7 +1365,7 @@ class Ui_MainWindow(object):
         
     def showEventDialog(self):
         self.event_dialog = QtWidgets.QDialog()
-        nbr_event = QtWidgets.QLabel("\nFound %s event(s) from IRIS Data Center:\n"% (len(self.events_center)))
+        nbr_event = QtWidgets.QLabel("\nFound %s event(s) from RESIF Data Center:\n"% (len(self.events_center)))
         nbr_event.setAlignment(QtCore.Qt.AlignCenter)
         
                                      
@@ -1506,7 +1506,7 @@ class Ui_MainWindow(object):
         print("Stations set : ", stations_set)
         
         # GET SEISMIC TRACE
-        client = Client("IRIS")
+        client = Client("RESIF")
         print("Getting seismic traces...")
         self.st = client.get_waveforms(
             network = ",".join(network_set),
@@ -1519,6 +1519,7 @@ class Ui_MainWindow(object):
             )
         
         # %% ROTATION PROCESSING
+        '''
         print("Rotation now!")
         back_azimuths = []
         for station_info in self.stations_communes:
@@ -1543,8 +1544,9 @@ class Ui_MainWindow(object):
                 # Appliquer la rotation horizontale avec l'azimut de référence
                 trace.rotate(method="NE->RT", back_azimuth=back_azimuth, inventory=None)
         self.st.plot()
-        
+        '''
         # %% Processing
+        
         stz = self.st.select(component="Z")
         stz.remove_response(output="VEL")
         stz.filter("bandpass",freqmin=0.05,freqmax=0.2)
