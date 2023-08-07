@@ -17,8 +17,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from superqt import QRangeSlider
 
 import obspy
-from obspy import read_inventory, UTCDateTime
-from obspy.geodetics import gps2dist_azimuth
+from obspy import read_inventory
+from obspy.geodetics import gps2dist_azimuth, locations2degrees
 from obspy.clients.fdsn import Client
 from DataProcessor_Fonctions import get_depth_color, plot_record_section_degree
 
@@ -203,37 +203,6 @@ class Ui_MainWindow(object):
         self.mag_slider.setValue((40,70))
         self.mag_slider.setFixedWidth(150)
         self.mag_slider.setRange(0,100)
-        self.mag_slider.setStyleSheet("""
-                                      QSlider {
-                                          
-                                        min-height: 20px;
-                                    }
-                                    
-                                    QSlider::groove:horizontal {
-                                        border: 0px;
-                                        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #888, stop:1 #ddd);
-                                        height: 20px;
-                                        border-radius: 10px;
-                                    }
-                                    
-                                    QSlider::handle {
-                                        background: qradialgradient(cx:0, cy:0, radius: 1.2, fx:0.35,
-                                                                    fy:0.3, stop:0 #eef, stop:1 #002);
-                                        height: 20px;
-                                        width: 20px;
-                                        border-radius: 10px;
-                                    }
-                                    
-                                    QSlider::sub-page:horizontal {
-                                        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #227, stop:1 #77a);
-                                        border-top-left-radius: 10px;
-                                        border-bottom-left-radius: 10px;
-                                    }
-                                    
-                                    QRangeSlider {
-                                        qproperty-barColor: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #444, stop:1 #777);
-                                    }
-                                      """)
         self.mag_min = QtWidgets.QDoubleSpinBox()
         self.mag_min.setMinimum(0)
         self.mag_min.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
@@ -352,37 +321,6 @@ class Ui_MainWindow(object):
         self.depth_slider.setValue((50,300))
         self.depth_slider.setFixedWidth(150)
         self.depth_slider.setRange(0,600)
-        self.depth_slider.setStyleSheet("""
-                                      QSlider {
-                                          
-                                        min-height: 20px;
-                                    }
-                                    
-                                    QSlider::groove:horizontal {
-                                        border: 0px;
-                                        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #888, stop:1 #ddd);
-                                        height: 20px;
-                                        border-radius: 10px;
-                                    }
-                                    
-                                    QSlider::handle {
-                                        background: qradialgradient(cx:0, cy:0, radius: 1.2, fx:0.35,
-                                                                    fy:0.3, stop:0 #eef, stop:1 #002);
-                                        height: 20px;
-                                        width: 20px;
-                                        border-radius: 10px;
-                                    }
-                                    
-                                    QSlider::sub-page:horizontal {
-                                        background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #227, stop:1 #77a);
-                                        border-top-left-radius: 10px;
-                                        border-bottom-left-radius: 10px;
-                                    }
-                                    
-                                    QRangeSlider {
-                                        qproperty-barColor: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #444, stop:1 #777);
-                                    }
-                                      """)
         self.depth_min = QtWidgets.QSpinBox()
         self.depth_min.setMinimum(0)
         self.depth_min.setMaximum(600)
@@ -953,7 +891,7 @@ class Ui_MainWindow(object):
     def get_station(self):
         # CLIENT
         try :
-            client = Client("IRIS")
+            client = Client("RESIF")
         except obspy.clients.fdsn.header.FDSNNoServiceException as e:
             QtWidgets.QMessageBox.warning("Error", "Internet connection is required")
         # DATE TIME CONVERSION
@@ -970,7 +908,7 @@ class Ui_MainWindow(object):
         #network = "*"
         print("Inventory in process...")
         # INVENTORY
-        self.inventory = client.get_stations(network="IU", level='channel', channel = self.channel_choice.currentText())
+        self.inventory = client.get_stations(network="G", level='channel', channel = self.channel_choice.currentText())
         #bucket = storage_client.bucket()
      
         self.stations = []
@@ -1240,7 +1178,7 @@ class Ui_MainWindow(object):
                     filename = '{}_{}.xml'.format(net.code, sta.code)
                     file_path = os.path.join(parent_directory, filename)
         
-                    station_inventory = read_inventory(network=net.code, station=sta.code, starttime=self.starttime, endtime=self.endtime, client="IRIS")
+                    station_inventory = read_inventory(network=net.code, station=sta.code, starttime=self.starttime, endtime=self.endtime, client="RESIF")
                     station_inventory.write(file_path, format="stationxml")
                     
             QtWidgets.QMessageBox.information(None, "Download completed", "Stations data successfully downloaded.")
@@ -1346,7 +1284,7 @@ class Ui_MainWindow(object):
         
         # DEBUT DE LA FENETRE SUR LES STATONS
         self.sta_dialog.close()
-        client = Client("IRIS")
+        client = Client("RESIF")
         # CONVERT MAGNITUDE
         valueMagMin = self.mag_min.value()
         valueMagMax = self.mag_max.value()
@@ -1427,7 +1365,7 @@ class Ui_MainWindow(object):
         
     def showEventDialog(self):
         self.event_dialog = QtWidgets.QDialog()
-        nbr_event = QtWidgets.QLabel("\nFound %s event(s) from IRIS Data Center:\n"% (len(self.events_center)))
+        nbr_event = QtWidgets.QLabel("\nFound %s event(s) from RESIF Data Center:\n"% (len(self.events_center)))
         nbr_event.setAlignment(QtCore.Qt.AlignCenter)
         
                                      
@@ -1502,7 +1440,6 @@ class Ui_MainWindow(object):
             index = self.event_list.row(item)
             self.eqo = self.events_center[index].origins[0]
             self.eqoMag = self.events_center[index].magnitudes[0].mag
-            self.eqoStart = self.eqo.time
             self.eqoLatitude = self.eqo.latitude
             self.eqoLongitude = self.eqo.longitude
             print("eqo.latitude =", self.eqoLatitude)
@@ -1541,6 +1478,7 @@ class Ui_MainWindow(object):
     # %%  RECORD SECTION  
     def record_section_dialog(self,item):
         self.event_dialog.close()
+        self.loading_window()
         self.section_dialog = QtWidgets.QDialog()
         self.section_dialog.setWindowIcon(QtGui.QIcon('logo.jpg'))
         self.section_dialog.setWindowTitle("{}".format(item.text()))
@@ -1553,7 +1491,7 @@ class Ui_MainWindow(object):
         
         eq_lat = self.eqo.latitude
         eq_lon = self.eqo.longitude
-        eq_start = self.eqo.time
+        self.eq_start = self.eqo.time
         
         # Liste de stations selectionnées
         self.stations_communes = []
@@ -1563,24 +1501,24 @@ class Ui_MainWindow(object):
         print("Stations communes: ",self.stations_communes)
         
         #
-        network_set = {s[0] for s in self.stations_communes}
-        print("Network set : ",network_set)
-        stations_set = {s[1] for s in self.stations_communes}
-        print("Stations set : ", stations_set)
+        self.network_set = {s[0] for s in self.stations_communes}
+        print("Network set : ",self.network_set)
+        self.stations_set = {s[1] for s in self.stations_communes}
+        print("Stations set : ", self.stations_set)
         
         # GET SEISMIC TRACE
-        client = Client("IRIS")
+        client = Client("RESIF")
         print("Getting seismic traces...")
         self.st = client.get_waveforms(
-            network = ",".join(network_set),
-            station = ",".join(stations_set),
+            network = ",".join(self.network_set),
+            station = ",".join(self.stations_set),
             location = "00",
             channel = str(self.channel_choice.currentText()),
-            starttime = eq_start,
-            endtime = eq_start + 14400,
+            starttime = self.eq_start,
+            endtime = self.eq_start + 14400,
             attach_response = True,
             )
-        
+
         # %% ROTATION PROCESSING
         '''
         print("Rotation now!")
@@ -1588,11 +1526,11 @@ class Ui_MainWindow(object):
         for station_info in self.stations_communes:
             network, station, station_latitude, station_longitude, _ = station_info
         
-            # Calcul du back-azimuth à partir des coordonnées
+            # Calcul du back azimuth à partir des coordonnées
             _, back_azimuth, _ = gps2dist_azimuth(station_latitude, station_longitude, self.eqoLatitude, self.eqoLongitude)
             back_azimuths.append(back_azimuth)
     
-        # Calcul de l'azimuth de référence (moyenne des back-azimuths)
+        # Calcul de l'azimut de référence (moyenne des back azimuths)
         reference_azimuth = sum(back_azimuths) / len(back_azimuths)
         
         # Appliquer la rotation horizontale pour chaque station
@@ -1608,8 +1546,8 @@ class Ui_MainWindow(object):
                 trace.rotate(method="NE->RT", back_azimuth=back_azimuth, inventory=None)
         self.st.plot()
         '''
+        # %% Processing
         
-        # %% Signal processing
         stz = self.st.select(component="Z")
         stz.remove_response(output="VEL")
         stz.filter("bandpass",freqmin=0.05,freqmax=0.2)
@@ -1621,6 +1559,7 @@ class Ui_MainWindow(object):
 
         self.figure_record_section = plot_record_section_degree(stz, self.stations_communes, eq_lat, eq_lon, outfile=name)
         self.canvas_record_section = FigureCanvas(self.figure_record_section)
+        
         
         
         download_btn = QtWidgets.QPushButton("Download this section")
@@ -1642,7 +1581,7 @@ class Ui_MainWindow(object):
                                        background-color: rgb(86, 101, 115);
                                    }
                                        """)
-                                       
+        self.load_win.close()                               
         vbox.addWidget(title)
         vbox.addWidget(self.canvas_record_section)    
         vbox.addWidget(download_btn)
@@ -1652,40 +1591,23 @@ class Ui_MainWindow(object):
     def download_seismic_data(self):
         directory = QtWidgets.QFileDialog.getExistingDirectory(None, "Select a destination folder")
         if directory:
-            
-            filename = self.eqoStart.strftime('%Y%m%dT%H%M%S')           
-            seismic_data_directory = os.path.join(directory, filename)  # Dossier parent "seismic_data"
-            
-            if not os.path.exists(seismic_data_directory):
-                os.makedirs(seismic_data_directory)
+            eqo_formatted = self.eq_start.strftime('%Y%m%d%H%M')
+            self.seismic_data_directory = os.path.join(directory, "{}".format(eqo_formatted))  # Dossier parent "seismic_data"
+            if not os.path.exists(self.seismic_data_directory):
+                os.makedirs(self.seismic_data_directory)
 
             format_choices = ["mseed", "sac"]
             selected_format, _ = QtWidgets.QInputDialog.getItem(None, "Select the data format", "Format:", format_choices, 0, False)
 
-            temp_file =  os.path.join(directory, "temp_file")
-            if not os.path.exists(temp_file):
-                os.makedirs(temp_file)
-
             '''
             for trace in self.st:
-                    
                 filename = f"{trace.stats.station}_{trace.stats.starttime.strftime('%Y%m%dT%H%M%S')}.{selected_format}"
-                filepath = os.path.join(temp_file, filename)
-                
-                start_time = UTCDateTime(trace.stats.starttime)  # Conversion en UTCDateTime
-                sac_header = {
-                    'network': trace.stats.network,
-                    'station': trace.stats.station,
-                    'location': trace.stats.location,
-                    'channel': trace.stats.channel,
-                    'starttime': start_time,
-                    'sampling_rate': trace.stats.sampling_rate,
-                }
+                filepath = os.path.join(seismic_data_directory, filename)
                 
                 if selected_format == "mseed":
                     trace.write(filepath, format='MSEED')
                 elif selected_format == "sac":
-                    trace.write(filepath, format='SAC',sac_header=sac_header, append=True)
+                    trace.write(filepath, format='SAC')
             '''
             for trace in self.st:
                 network = trace.stats.network
@@ -1694,14 +1616,106 @@ class Ui_MainWindow(object):
                 end_time = trace.stats.endtime.strftime('%Y%m%dT%H%M%S')
                 for component in trace.stats.channel.split(','):
                     component = component.strip()  # Remove leading/trailing whitespaces if any
-                    filename = f"{network}_{station}_{component}_{start_time}_{end_time}.{selected_format}"
-                    filepath = os.path.join(seismic_data_directory, filename)
+                    filename = f"{network}.{station}.{component}_{start_time}_{end_time}.{selected_format}"
+                    filepath = os.path.join(self.seismic_data_directory, filename)
     
                     if selected_format == "mseed":
                         trace.write(filepath, format='MSEED')
                     elif selected_format == "sac":
                         trace.write(filepath, format='SAC')
         QtWidgets.QMessageBox.information(None, "Download completed", "Seismic data successfully downloaded.")
+        
+        self.rotate()
+        
+        
+    def rotate(self):     
+        
+        network_dict = {}
+        
+        for station_info in self.stations_communes:
+            network = station_info[0]
+            station = station_info[1]
+            
+            if network in network_dict:
+                network_dict[network].add(station)
+            else:
+                network_dict[network] = {station}
+        
+        
+        for net, stations in network_dict.items():
+            for sta in stations:
+                file_z = f"./{self.seismic_data_directory}/{net}.{sta}_BHZ*.mseed"
+                file_n = f"./{self.seismic_data_directory}/{net}.{sta}_BHN*.mseed"
+                file_e = f"./{self.seismic_data_directory}/{net}.{sta}_BHE*.mseed"
+                
+                if not any([os.path.exists(f) for f in [file_z,file_n,file_e]]):
+                    print(f"No files found for network {net} and station {sta}")
+                    continue
+                try:
+                    stz = obspy.read(file_z)
+                    stn = obspy.read(file_n)
+                    ste = obspy.read(file_e)
+                    
+                    st = stz + stn + ste
+                except Exception as e:
+                    print(f"Error reading files for network {net} and station {sta}: {e}")
+                 
+                # Get the inventory of the station
+                inventory = Client("RESIF").get_stations(network = f"{net}", station = f"{sta}", starttime = self.eq_start, endtime = self.eq_start + 14400)
+                
+                # Get the station
+                station = inventory[0][0]
+                
+                # Get the coordinates of latitude, longitude of the station
+                latitude = station.latitude
+                longitude = station.longitude
+                
+                # Coordinates of the event (hypocenter)
+                event_latitude = self.eqo.latitude
+                event_longitude = self.eqo.longitude
+                
+                # Computation of the azimuth
+                delta_longitude = event_longitude - longitude
+                back_azimuth = np.arctan2(np.sin(delta_longitude * np.pi / 180),
+                                          np.cos(latitude * np.pi / 180) * np.tan(event_latitude * np.pi / 180) -
+                                          np.sin(latitude * np.pi / 180) * np.cos(delta_longitude * np.pi / 180)) * 180 / np.pi
+                distance_epicentral = locations2degrees(event_latitude, event_longitude, latitude, longitude)
+                
+                # Correction for a positive azimuth in the range 0-360 degrees
+                if back_azimuth < 0:
+                    back_azimuth += 360
+                    
+                # start rotation
+                st_rot = st.rotate(method='NE->RT', back_azimuth = back_azimuth)
+                
+                st_z = st_rot.select(component='Z')
+                st_r = st_rot.select(component='R')
+                st_t = st_rot.select(component='T')
+                
+                os.makedirs('rotate')
+                st_z.write(f"./rotate/{net}.{sta}_BHZ.mseed")
+                st_r.write(f"./rotate/{net}.{sta}_BHR.mseed")
+                st_t.write(f"./rotate/{net}.{sta}_BHT.mseed")
+        
+    def loading_window(self):
+        self.load_win = QtWidgets.QDialog()
+        self.load_win.setGeometry(200,200,100,100)
+        self.load_win.setWindowTitle('Computing of the record section in progress')
+        self.load_win.setWindowIcon(QtGui.QIcon('logo.jpg'))
+        self.load_win.setWindowOpacity(1)
+        
+        label1 = QtWidgets.QLabel('Please, wait a moment')
+        label1.setAlignment(QtCore.Qt.AlignCenter)
+        
+        label2 = QtWidgets.QLabel('Loading...')
+        label2.setAlignment(QtCore.Qt.AlignCenter)
+        
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(label1)
+        layout.addWidget(label2)
+        self.load_win.setLayout(layout)
+        
+        self.load_win.show()
         
         
         
