@@ -908,7 +908,7 @@ class Ui_MainWindow(object):
         #network = "*"
         print("Inventory in process...")
         # INVENTORY
-        self.inventory = client.get_stations(network="G", level='channel', channel = self.channel_choice.currentText())
+        self.inventory = client.get_stations(network="*", level='channel', channel = self.channel_choice.currentText())
         #bucket = storage_client.bucket()
      
         self.stations = []
@@ -1519,33 +1519,7 @@ class Ui_MainWindow(object):
             attach_response = True,
             )
 
-        # %% ROTATION PROCESSING
-        '''
-        print("Rotation now!")
-        back_azimuths = []
-        for station_info in self.stations_communes:
-            network, station, station_latitude, station_longitude, _ = station_info
-        
-            # Calcul du back azimuth à partir des coordonnées
-            _, back_azimuth, _ = gps2dist_azimuth(station_latitude, station_longitude, self.eqoLatitude, self.eqoLongitude)
-            back_azimuths.append(back_azimuth)
-    
-        # Calcul de l'azimut de référence (moyenne des back azimuths)
-        reference_azimuth = sum(back_azimuths) / len(back_azimuths)
-        
-        # Appliquer la rotation horizontale pour chaque station
-        for trace in self.st:
-            trace_station = trace.stats.station
-        
-            # Trouver l'index correspondant à la station dans la liste station_list
-            station_index = next((i for i, station_info in enumerate(self.stations_communes) if station_info[1] == trace_station), None)
-            if station_index is not None:
-                back_azimuth = back_azimuths[station_index]
-        
-                # Appliquer la rotation horizontale avec l'azimut de référence
-                trace.rotate(method="NE->RT", back_azimuth=back_azimuth, inventory=None)
-        self.st.plot()
-        '''
+
         # %% Processing
         
         stz = self.st.select(component="Z")
@@ -1628,9 +1602,6 @@ class Ui_MainWindow(object):
                     
                     self.network_dict[network].add(station)
 
-                    
-
-
                     if selected_format == "mseed":
                         trace.write(filepath, format='MSEED')
                     elif selected_format == "sac":
@@ -1654,7 +1625,9 @@ class Ui_MainWindow(object):
             else:
                 network_dict[network] = {station}
         '''
-        os.makedirs("rotate")
+        directory_ZNE = f"{self.seismic_data_directory}_ZRT"
+        if not os.path.exists(directory_ZNE):
+            os.makedirs(f"{self.seismic_data_directory}_ZRT")
         
         for net, stations in self.network_dict.items():
             for sta in stations:
@@ -1710,17 +1683,19 @@ class Ui_MainWindow(object):
                 st_t = st_rot.select(component='T')
                 
         
-                st_z.write(f"rotate/{net}.{sta}_BHZ.mseed")
-                st_r.write(f"rotate/{net}.{sta}_BHR.mseed")
-                st_t.write(f"rotate/{net}.{sta}_BHT.mseed")
+                st_z.write(f"{self.seismic_data_directory}_ZRT/{net}.{sta}_BHZ.mseed")
+                st_r.write(f"{self.seismic_data_directory}_ZRT/{net}.{sta}_BHR.mseed")
+                st_t.write(f"{self.seismic_data_directory}_ZRT/{net}.{sta}_BHT.mseed")
                 
         
     def loading_window(self):
         self.load_win = QtWidgets.QDialog()
+        self.load_win = QtWidgets.QWidget()
         self.load_win.setGeometry(200,200,100,100)
         self.load_win.setWindowTitle('Computing of the record section in progress')
         self.load_win.setWindowIcon(QtGui.QIcon('logo.jpg'))
         self.load_win.setWindowOpacity(1)
+        #self.load_win.isModal(False)
         
         label1 = QtWidgets.QLabel('Please, wait a moment')
         label1.setAlignment(QtCore.Qt.AlignCenter)
@@ -1734,6 +1709,45 @@ class Ui_MainWindow(object):
         self.load_win.setLayout(layout)
         
         self.load_win.show()
+        
+    def call_dsmpy(self):
+        from dsmpy import dsm, seismicmodel
+        from dsmpy.event import Event
+        from dsmpy.station import Station
+        from dsmpy.utils.cmtcatalog import read_catalog
+        
+        # load gcmt catalog
+        catalog = read_catalog()
+        # get event from catalog
+        event = Event.event_from_catalog(
+            catalog, self.seismic_data_directory)
+        # define station FCC
+        stations = [
+            Station(
+                name='FCC', network='CN',
+                latitude=58.7592, longitude=-94.0884), 
+            ]
+        # load (anisotropic) PREM model
+        seismic_model = seismicmodel.SeismicModel.prem()
+        tlen = 3276.8 # duration of synthetics (s)
+        nspc = 256 # number of points in frequency domain
+        sampling_hz = 20 # sampling frequency for sythetics
+        # create input parameters for pydsm
+        input = dsm.PyDSMInput.input_from_arrays(
+            event, stations, seismic_model, tlen, nspc, sampling_hz)
+        # compute synthetics in frequency domain calling DSM Fortran
+        output = dsm.compute(input)
+        output.to_time_domain() # perform inverse FFT
+        output.filter(freq=0.04) # apply a 25 seconds low-pass filter
+        us = output.us # synthetics. us.shape = (3,nr,tlen)
+        ts = output.ts # time points [0, tlen]
+        # brackets can be used to access component and station
+        u_Z_FCC = output['Z', 'FCC_CN']
+        # to plot a three-component record section, use
+        output.plot()
+        plt.show()
+        # to write synthetics to SAC files, use
+        output.write(root_path='.', format='sac')
         
         
         
