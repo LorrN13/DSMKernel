@@ -1,0 +1,19 @@
+name: test
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - pytest
+  - numpy=1.22.3
+  - mpi4py
+  - matplotlib
+  - pandas
+  - geographiclib
+  - obspy
+  - clang
+  - conda-build
+  - PyQt5
+  - pyqtlet
+  - PyQtwebengine
+  - superqt
